@@ -70,8 +70,6 @@ function Detail() {
     let date = convertToDate(curDateUnix);
     setSelectedDate(date);
     setWeatherInfo(result.list);
-    console.log(date);
-    console.log(result);
   };
 
   const calculateDate = () => {

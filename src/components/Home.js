@@ -99,7 +99,6 @@ function Home() {
       "https://api.openweathermap.org/data/2.5/onecall?lat=3.15&lon=101.71&exclude=current,minutely,alerts&units=metric&appid=b25c314cd84a8c1039c7a68fb4490a0c";
     const tmp = await fetch(endpoint);
     const result = await tmp.json();
-    console.log(result);
     dispatch(writeWeather(result));
     setFetchComplete(true);
   };

@@ -4,17 +4,25 @@ import {
   Grid,
   Paper,
   Typography,
-  Button,
   Container,
   AppBar,
   Toolbar,
+  IconButton,
 } from "@material-ui/core";
 import NightsStayRoundedIcon from "@material-ui/icons/NightsStayRounded";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import { useHistory } from "react-router-dom";
+import { displayTime, convertToDate } from "./function";
 
 const useStyles = makeStyles((theme) => ({
   headerName: {
     alignSelf: "center",
+  },
+  title: {
+    marginLeft: 25,
+    marginTop: 20,
+    fontSize: 30,
+    fontWeight: "bold",
   },
   weatherInfo: {
     paddingTop: 20,
@@ -33,11 +41,7 @@ const useStyles = makeStyles((theme) => ({
   },
   backdrop: {
     backgroundColor: "#5F86FE",
-    height: 680,
-  },
-  returnButton: {
-    marginTop: 60,
-    marginLeft: 375,
+    height: 1650,
   },
   "@keyframes fadeIn": {
     "0%": {
@@ -52,84 +56,75 @@ const useStyles = makeStyles((theme) => ({
 function Detail() {
   const classes = useStyles();
   const history = useHistory();
-  const curData = history.location.appState.hourlydata;
+  const curDateUnix = history.location.appState.hourlydata;
 
   const [weatherInfo, setWeatherInfo] = useState([]);
-
-  var getCurDate = new Date();
-  var getHourTime = getCurDate.getHours();
-
-  const getWeatherIcon = (weather) => {
-    let w = weather;
-    console.log(weatherInfo);
-    return w[0].icon;
-  };
-
-  const displayTime = (unix) => {
-    let unix_timestamp = unix;
-    var tmp = new Date(unix_timestamp * 1000);
-    var toDate = tmp.toLocaleTimeString();
-    return toDate;
-  };
-
-  const convertToHours = (i) => {
-    let t = new Date(i * 1000);
-    let hours = t.getHours();
-    return hours;
-  };
+  const [selectedDate, setSelectedDate] = useState("");
 
   const includeTime = async () => {
-    let tmp = await Promise.all(
-      curData.map(async (obj) => {
-        return {
-          ...obj,
-          utcTime: convertToHours(obj.dt),
-        };
-      })
-    );
-    setWeatherInfo(tmp);
+    const endpoint =
+      "https://api.openweathermap.org/data/2.5/forecast?q=Kuala%20Lumpur&units=metric&appid=b25c314cd84a8c1039c7a68fb4490a0c";
+
+    const tmp = await fetch(endpoint);
+    const result = await tmp.json();
+    let date = convertToDate(curDateUnix);
+    setSelectedDate(date);
+    setWeatherInfo(result.list);
+    console.log(date);
+    console.log(result);
   };
 
   const calculateDate = () => {
     var arr = [];
-    var i;
-    for (i in weatherInfo) {
-      for (getHourTime; getHourTime <= 24; getHourTime += 3) {
-        if (getHourTime === weatherInfo[i].utcTime) {
-          arr.push(
-            <Paper className={classes.weatherInfo}>
-              <Grid container spacing={0}>
-                <Grid item>
-                  <Container className={classes.image}>
-                    <img
-                      className={classes.curImg}
-                      alt="complex"
-                      src={
-                        process.env.PUBLIC_URL +
-                        `/${getWeatherIcon(curData[i].weather)}.png`
-                      }
-                    />
-                  </Container>
-                </Grid>
-                <div style={{ textAlign: "left" }}>
-                  <Typography
-                    display="block"
-                    variant="h5"
-                    style={{ fontWeight: "bold" }}
-                  >
-                    {"Feels Like " + `${curData[i].feels_like}` + "°C"}
-                  </Typography>
-                  <Typography display="block" variant="h5">
-                    {`${curData[i].weather[0].main}`}
-                  </Typography>
-                  <Typography variant="body1" color="textSecondary">
-                    {"Time :" + `${displayTime(curData[i].dt)}`}
-                  </Typography>
-                </div>
+
+    for (var i = 0; i < weatherInfo.length; i++) {
+      let int = convertToDate(weatherInfo[i].dt);
+      if (int === selectedDate) {
+        arr.push(
+          <Paper className={classes.weatherInfo}>
+            <Grid container spacing={0}>
+              <Grid item>
+                <Container className={classes.image}>
+                  <img
+                    className={classes.curImg}
+                    alt="complex"
+                    src={
+                      process.env.PUBLIC_URL +
+                      `/${weatherInfo[i].weather[0].icon}.png`
+                    }
+                  />
+                </Container>
               </Grid>
-            </Paper>
-          );
-        }
+              <div style={{ textAlign: "left" }}>
+                <Typography
+                  display="block"
+                  variant="h5"
+                  style={{ fontWeight: "bold" }}
+                >
+                  {`Feels Like ${weatherInfo[i].main.feels_like} °C`}
+                </Typography>
+                <Typography display="block" variant="h5">
+                  {`${weatherInfo[i].weather[0].main}`}
+                </Typography>
+                <Typography variant="body1" color="textSecondary">
+                  {`Time : ${displayTime(weatherInfo[i].dt)}`}
+                </Typography>
+              </div>
+            </Grid>
+          </Paper>
+        );
+      } else if (i === weatherInfo.length - 1 && arr.length === 0) {
+        arr.push(
+          <Paper className={classes.weatherInfo}>
+            <Typography
+              align="center"
+              variant="h5"
+              style={{ fontWeight: "bold" }}
+            >
+              Weather Not Found!
+            </Typography>
+          </Paper>
+        );
       }
     }
 
@@ -139,29 +134,29 @@ function Detail() {
   useEffect(() => {
     includeTime();
   }, []);
-  //! pass in city name as parameter when redirecting to this component. use that parameter
-  //! and fill into the api. then retrieve the hourly data and display it out
+
   return (
     <div className={classes.backdrop}>
       <AppBar position="static">
-        <Toolbar className={classes.headerName}>
+        <Toolbar>
+          <IconButton
+            edge="start"
+            className={classes.menuButton}
+            color="inherit"
+            aria-label="menu"
+            onClick={() => {
+              history.goBack();
+            }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+
           <NightsStayRoundedIcon />
           <Typography>Weather Forecast</Typography>
         </Toolbar>
       </AppBar>
+      <Typography className={classes.title}>{selectedDate}</Typography>
       {calculateDate()}
-      <div className={classes.returnButton}>
-        <Button
-          variant="contained"
-          color="primary"
-          size="medium"
-          onClick={() => {
-            history.goBack();
-          }}
-        >
-          Return
-        </Button>
-      </div>
     </div>
   );
 }

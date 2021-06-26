@@ -11,7 +11,7 @@ import {
 } from "@material-ui/core";
 import NightsStayRoundedIcon from "@material-ui/icons/NightsStayRounded";
 import { useHistory } from "react-router-dom";
-import { GraphQLClient, gql } from "graphql-request";
+import { convertToDate } from "./function";
 
 import { useDispatch, useSelector } from "react-redux";
 import { writeWeather } from "../reduxConfig/actions/weatherAction";
@@ -90,7 +90,6 @@ function Home() {
   const history = useHistory();
 
   const weatherInformation = weatherList.daily;
-  const hourlyInformation = weatherList.hourly;
   const timezone = weatherList.timezone;
 
   const [fetchComplete, setFetchComplete] = useState(false);
@@ -98,35 +97,27 @@ function Home() {
   const _getWeatherData = async () => {
     const endpoint =
       "https://api.openweathermap.org/data/2.5/onecall?lat=3.15&lon=101.71&exclude=current,minutely,alerts&units=metric&appid=b25c314cd84a8c1039c7a68fb4490a0c";
-    //const query = gql`{
-
-    //   }`;
-    // var variable;
-    // console.log("calling");
-    // const information = new GraphQLClient(endpoint, {
-    //   headers: { authorization: "Bearer MY_TOKEN" },
-    // });
-    // information.request(query, variable).then((data) => console.log(data));
-
     const tmp = await fetch(endpoint);
     const result = await tmp.json();
+    console.log(result);
     dispatch(writeWeather(result));
     setFetchComplete(true);
   };
 
-  const displayTime = (unix) => {
-    let unix_timestamp = unix;
-    var tmp = new Date(unix_timestamp * 1000);
-    var toDate = tmp.toLocaleDateString();
-    return toDate;
-  };
-
   const renderSubWeather = () => {
-    var i;
     var arr = [];
-    for (i = 1; i <= 6; i++) {
+    for (var i = 1; i <= 6; i++) {
+      let min = i;
       arr.push(
-        <ButtonBase className={classes.subCat}>
+        <ButtonBase
+          className={classes.subCat}
+          onClick={() => {
+            history.push({
+              pathname: "/detail",
+              appState: { hourlydata: weatherInformation[min].dt },
+            });
+          }}
+        >
           <Paper className={classes.subWeather}>
             <Grid container>
               <Grid item>
@@ -136,7 +127,7 @@ function Home() {
                     alt="complex"
                     src={
                       process.env.PUBLIC_URL +
-                      `/${weatherInformation[i].weather[0].icon}.png`
+                      `/${weatherInformation[min].weather[0].icon}.png`
                     }
                   />
                 </Container>
@@ -148,27 +139,23 @@ function Home() {
                     variant="h6"
                     style={{ fontWeight: "bold" }}
                   >
-                    {/* sdasdad */}
                     {"Feels Like " +
-                      `${weatherInformation[i].feels_like.day}` +
+                      `${weatherInformation[min].feels_like.day}` +
                       "°C"}
                   </Typography>
                   <Typography display="block" variant="h6">
-                    {/* sadsadas */}
                     {"High " +
-                      `${weatherInformation[i].temp.max}` +
+                      `${weatherInformation[min].temp.max}` +
                       "°C |" +
                       " Low " +
-                      `${weatherInformation[i].temp.min}` +
+                      `${weatherInformation[min].temp.min}` +
                       "°C"}
                   </Typography>
                   <Typography variant="body1" color="textSecondary">
-                    {/* asdasdasd */}
-                    {displayTime(weatherInformation[i].dt)}
+                    {convertToDate(weatherInformation[min].dt)}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    {weatherInformation[i].weather[0].main}
-                    {/* Rainy */}
+                    {weatherInformation[min].weather[0].main}
                   </Typography>
                 </div>
               </Grid>
@@ -186,7 +173,7 @@ function Home() {
         onClick={() => {
           history.push({
             pathname: "/detail",
-            appState: { hourlydata: hourlyInformation },
+            appState: { hourlydata: weatherInformation[0].dt },
           });
         }}
       >
@@ -210,7 +197,6 @@ function Home() {
                 variant="h6"
                 style={{ fontWeight: "bold" }}
               >
-                {/* Feels Like 30°C */}
                 {"Feels Like " +
                   `${weatherInformation[0].feels_like.day}` +
                   "°C"}
@@ -222,15 +208,12 @@ function Home() {
                   " Low " +
                   `${weatherInformation[0].temp.min}` +
                   "°C"}
-                {/* High 20°C | Low 18°C */}
               </Typography>
               <Typography variant="body1" color="textSecondary">
-                {displayTime(weatherInformation[0].dt)}
-                {/* 26/6/2021 */}
+                {convertToDate(weatherInformation[0].dt)}
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 {weatherInformation[0].weather[0].main}
-                {/* Rainy */}
               </Typography>
             </div>
           </Grid>
